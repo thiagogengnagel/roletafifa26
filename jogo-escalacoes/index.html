@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jogo de Escalações</title>
+  <style>
+    :root {
+      --grass: #136f10;
+      --grass-dark: #07510e;
+      --grass-light: #33951b;
+      --line: rgba(241, 246, 222, 0.86);
+      --cream: #f3ead2;
+      --ink: #101513;
+      --black: #070908;
+      --blue: #167fc5;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--cream);
+      font-family: "Trebuchet MS", Verdana, sans-serif;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(214, 168, 79, 0.16), transparent 24rem),
+        linear-gradient(135deg, #111713, #19392c 58%, #0b1c14);
+    }
+
+    main {
+      width: min(980px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 34px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(2.5rem, 8vw, 5.8rem);
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      text-shadow: 0 5px 0 rgba(0, 0, 0, 0.28);
+    }
+
+    .rule-pill {
+      max-width: 320px;
+      padding: 12px 14px;
+      border: 1px solid rgba(243, 234, 210, 0.36);
+      background: rgba(16, 21, 19, 0.6);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+    }
+
+    .rule-pill span,
+    .formation-badge span {
+      display: block;
+      margin-bottom: 4px;
+      color: rgba(243, 234, 210, 0.7);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .rule-pill strong {
+      display: block;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .mosaic-card {
+      padding: 14px;
+      background: var(--cream);
+      border: 3px solid #171a16;
+      box-shadow: var(--shadow), inset 0 0 0 5px rgba(16, 21, 19, 0.08);
+    }
+
+    .pitch {
+      position: relative;
+      min-height: 940px;
+      overflow: hidden;
+      border: 5px solid var(--line);
+      background:
+        repeating-linear-gradient(180deg, rgba(255,255,255,0.06) 0 84px, rgba(0,0,0,0.08) 84px 168px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 0 12%, transparent 12% 24%) 0 0 / 178px 100%,
+        radial-gradient(circle at 50% 50%, transparent 0 8.3rem, var(--line) 8.4rem 8.65rem, transparent 8.75rem),
+        linear-gradient(180deg, var(--grass-light), var(--grass) 38%, var(--grass-dark));
+      box-shadow: inset 0 0 0 3px rgba(16, 21, 19, 0.16);
+    }
+
+    .pitch::before,
+    .pitch::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      width: 48%;
+      height: 158px;
+      border: 5px solid var(--line);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .pitch::before {
+      top: -5px;
+      border-top: 0;
+    }
+
+    .pitch::after {
+      bottom: -5px;
+      border-bottom: 0;
+    }
+
+    .half-line {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 100%;
+      border-top: 5px solid var(--line);
+      transform: translateY(-50%);
+    }
+
+    .goal-box {
+      position: absolute;
+      left: 50%;
+      width: 24%;
+      height: 70px;
+      border: 5px solid var(--line);
+      transform: translateX(-50%);
+    }
+
+    .goal-box.top {
+      top: -5px;
+      border-top: 0;
+    }
+
+    .goal-box.bottom {
+      bottom: -5px;
+      border-bottom: 0;
+    }
+
+    .corner {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      border: 4px solid var(--line);
+      pointer-events: none;
+    }
+
+    .corner.tl { top: -4px; left: -4px; border-right: 0; border-bottom: 0; border-radius: 0 0 38px 0; }
+    .corner.tr { top: -4px; right: -4px; border-left: 0; border-bottom: 0; border-radius: 0 0 0 38px; }
+    .corner.bl { bottom: -4px; left: -4px; border-right: 0; border-top: 0; border-radius: 0 38px 0 0; }
+    .corner.br { bottom: -4px; right: -4px; border-left: 0; border-top: 0; border-radius: 38px 0 0 0; }
+
+    .formation-badge {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 4;
+      min-width: 140px;
+      padding: 10px 12px;
+      color: var(--cream);
+      background: rgba(7, 9, 8, 0.64);
+      border: 1px solid rgba(243, 234, 210, 0.24);
+      backdrop-filter: blur(3px);
+    }
+
+    .formation-badge strong {
+      display: block;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: 2.4rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+    }
+
+    .player {
+      position: absolute;
+      left: calc(var(--x) * 1%);
+      top: calc(var(--y) * 1%);
+      width: clamp(82px, 10vw, 112px);
+      min-height: 106px;
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 4px;
+      transform: translate(-50%, -50%) scale(0.82);
+      opacity: 0;
+      transition: transform 260ms ease, opacity 260ms ease;
+      z-index: 3;
+    }
+
+    .player.reveal {
+      animation: shirtPop 520ms cubic-bezier(.2, 1.6, .3, 1) both;
+    }
+
+    .shirt-wrap {
+      position: relative;
+      width: 64px;
+      height: 70px;
+      display: grid;
+      place-items: center;
+    }
+
+    .shirt {
+      position: relative;
+      width: 46px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--black);
+      border: 2px solid rgba(255, 255, 255, 0.52);
+      border-radius: 9px 9px 8px 8px;
+      box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+      z-index: 2;
+    }
+
+    .shirt::before,
+    .shirt::after {
+      content: "";
+      position: absolute;
+      top: 5px;
+      width: 22px;
+      height: 20px;
+      background: #fff;
+      border: 2px solid rgba(16, 21, 19, 0.25);
+      z-index: -1;
+    }
+
+    .shirt::before {
+      left: -18px;
+      border-radius: 15px 4px 9px 10px;
+      transform: rotate(-20deg);
+    }
+
+    .shirt::after {
+      right: -18px;
+      border-radius: 4px 15px 10px 9px;
+      transform: rotate(20deg);
+    }
+
+    .shirt .ovr {
+      margin-top: 4px;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .pos-label,
+    .country-label {
+      max-width: 126px;
+      padding: 3px 9px;
+      color: var(--cream);
+      background: rgba(7, 9, 8, 0.58);
+      border-radius: 6px;
+      line-height: 1.1;
+      text-align: center;
+      overflow-wrap: anywhere;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(2px);
+    }
+
+    .pos-label {
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .country-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-width: 76px;
+      font-size: 0.9rem;
+      font-weight: 900;
+    }
+
+    .flag-emoji {
+      font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      min-height: 68px;
+      border: 0;
+      padding: 0 24px;
+      color: var(--cream);
+      background: #111713;
+      font: 900 1rem "Trebuchet MS", Verdana, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: inset 0 -5px 0 rgba(255, 255, 255, 0.12), 0 8px 0 rgba(0, 0, 0, 0.18);
+      transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: inset 0 -5px 0 rgba(255, 255, 255, 0.12), 0 10px 0 rgba(0, 0, 0, 0.18);
+      background: #1e2a23;
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(5px);
+      box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12), 0 3px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.66;
+    }
+
+    @keyframes shirtPop {
+      0% { transform: translate(-50%, -50%) scale(0.2) rotate(-10deg); opacity: 0; }
+      70% { transform: translate(-50%, -50%) scale(1.07) rotate(2deg); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .rule-pill {
+        max-width: none;
+      }
+
+      .pitch {
+        min-height: 760px;
+      }
+
+      .player {
+        width: 76px;
+      }
+
+      .shirt-wrap {
+        width: 56px;
+        height: 62px;
+      }
+
+      .shirt {
+        width: 39px;
+        height: 50px;
+      }
+
+      .shirt::before,
+      .shirt::after {
+        width: 18px;
+        height: 17px;
+      }
+
+      .shirt::before { left: -15px; }
+      .shirt::after { right: -15px; }
+
+      .shirt .ovr {
+        font-size: 1.65rem;
+      }
+
+      .country-label {
+        font-size: 0.76rem;
+        min-width: 66px;
+        max-width: 98px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="topbar" aria-label="Introducao">
+      <h1>Jogo de escalações surpresa</h1>
+      <div class="rule-pill">
+        <span>Regra</span>
+        <strong>O botão sorteia uma das 10 formações e preenche cada camiseta com overall de 75 a 94 e nacionalidade campeã da Copa.</strong>
+      </div>
+    </section>
+
+    <section class="mosaic-card" aria-label="Mosaico de escalação">
+      <div class="pitch" id="pitch">
+        <div class="half-line" aria-hidden="true"></div>
+        <div class="goal-box top" aria-hidden="true"></div>
+        <div class="goal-box bottom" aria-hidden="true"></div>
+        <div class="corner tl" aria-hidden="true"></div>
+        <div class="corner tr" aria-hidden="true"></div>
+        <div class="corner bl" aria-hidden="true"></div>
+        <div class="corner br" aria-hidden="true"></div>
+        <div class="formation-badge">
+          <span>Formação</span>
+          <strong id="formationResult">---</strong>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="spinButton" type="button">Sortear escalação</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const champions = [
+      { flag: "🇧🇷", name: "Brasil" },
+      { flag: "🇩🇪", name: "Alemanha" },
+      { flag: "🇮🇹", name: "Itália" },
+      { flag: "🇦🇷", name: "Argentina" },
+      { flag: "🇫🇷", name: "França" },
+      { flag: "🇺🇾", name: "Uruguai" },
+      { flag: "🇪🇸", name: "Espanha" },
+      { flag: "🏴", name: "Inglaterra" }
+    ];
+
+    const formations = [
+      {
+        name: "4-4-2",
+        positions: [
+          ["GOL", 50, 91], ["LD", 84, 77], ["ZAG", 62, 77], ["ZAG", 38, 77], ["LE", 16, 77],
+          ["MD", 86, 52], ["MC", 58, 54], ["MC", 42, 54], ["ME", 14, 52], ["ATA", 40, 25], ["ATA", 60, 25]
+        ]
+      },
+      {
+        name: "4-3-3",
+        positions: [
+          ["GOL", 50, 91], ["LD", 84, 77], ["ZAG", 62, 77], ["ZAG", 38, 77], ["LE", 16, 77],
+          ["MC", 50, 57], ["MC", 34, 48], ["MC", 66, 48], ["PE", 22, 27], ["ATA", 50, 22], ["PD", 78, 27]
+        ]
+      },
+      {
+        name: "4-2-3-1",
+        positions: [
+          ["GOL", 50, 91], ["LD", 84, 77], ["ZAG", 62, 77], ["ZAG", 38, 77], ["LE", 16, 77],
+          ["VOL", 42, 60], ["VOL", 58, 60], ["MEI", 50, 42], ["ME", 22, 42], ["MD", 78, 42], ["ATA", 50, 21]
+        ]
+      },
+      {
+        name: "3-5-2",
+        positions: [
+          ["GOL", 50, 91], ["ZAG", 30, 77], ["ZAG", 50, 78], ["ZAG", 70, 77],
+          ["ME", 14, 52], ["MD", 86, 52], ["VOL", 50, 59], ["MC", 36, 47], ["MC", 64, 47], ["ATA", 42, 24], ["ATA", 58, 24]
+        ]
+      },
+      {
+        name: "3-4-3",
+        positions: [
+          ["GOL", 50, 91], ["ZAG", 30, 77], ["ZAG", 50, 78], ["ZAG", 70, 77],
+          ["ME", 16, 54], ["MC", 42, 55], ["MC", 58, 55], ["MD", 84, 54], ["PE", 23, 26], ["ATA", 50, 21], ["PD", 77, 26]
+        ]
+      },
+      {
+        name: "5-3-2",
+        positions: [
+          ["GOL", 50, 91], ["LD", 88, 76], ["ZAG", 68, 78], ["ZAG", 50, 80], ["ZAG", 32, 78], ["LE", 12, 76],
+          ["MC", 34, 50], ["MC", 50, 56], ["MC", 66, 50], ["ATA", 42, 24], ["ATA", 58, 24]
+        ]
+      },
+      {
+        name: "4-1-2-1-2",
+        positions: [
+          ["GOL", 50, 91], ["LD", 84, 77], ["ZAG", 62, 77], ["ZAG", 38, 77], ["LE", 16, 77],
+          ["VOL", 50, 62], ["MC", 34, 48], ["MC", 66, 48], ["MEI", 50, 37], ["ATA", 42, 22], ["ATA", 58, 22]
+        ]
+      },
+      {
+        name: "4-2-2-2",
+        positions: [
+          ["GOL", 50, 91], ["LD", 84, 77], ["ZAG", 62, 77], ["ZAG", 38, 77], ["LE", 16, 77],
+          ["VOL", 40, 60], ["VOL", 60, 60], ["MEI", 32, 41], ["MEI", 68, 41], ["ATA", 42, 22], ["ATA", 58, 22]
+        ]
+      },
+      {
+        name: "4-5-1",
+        positions: [
+          ["GOL", 50, 91], ["LD", 84, 77], ["ZAG", 62, 77], ["ZAG", 38, 77], ["LE", 16, 77],
+          ["ME", 14, 50], ["MC", 36, 55], ["MC", 64, 55], ["MD", 86, 50], ["MEI", 50, 39], ["ATA", 50, 20]
+        ]
+      },
+      {
+        name: "5-2-1-2",
+        positions: [
+          ["GOL", 50, 91], ["LD", 88, 76], ["ZAG", 68, 78], ["ZAG", 50, 80], ["ZAG", 32, 78], ["LE", 12, 76],
+          ["MC", 40, 54], ["MC", 60, 54], ["MEI", 50, 39], ["ATA", 42, 22], ["ATA", 58, 22]
+        ]
+      }
+    ];
+
+    const pitch = document.getElementById("pitch");
+    const formationResult = document.getElementById("formationResult");
+    const spinButton = document.getElementById("spinButton");
+    let filling = false;
+
+    function randomOverall() {
+      return Math.floor(Math.random() * 20) + 75;
+    }
+
+    function randomChampion() {
+      return champions[Math.floor(Math.random() * champions.length)];
+    }
+
+    function clearPlayers() {
+      pitch.querySelectorAll(".player").forEach((node) => node.remove());
+    }
+
+    function buildSquad(formation) {
+      return formation.positions.map(([pos, x, y]) => {
+        const country = randomChampion();
+        return {
+          pos,
+          x,
+          y,
+          ovr: randomOverall(),
+          flag: country.flag,
+          country: country.name
+        };
+      });
+    }
+
+    function renderPlayer(player, index) {
+      const marker = document.createElement("div");
+      marker.className = "player";
+      marker.style.setProperty("--x", player.x);
+      marker.style.setProperty("--y", player.y);
+      marker.innerHTML = `
+        <div class="shirt-wrap" aria-hidden="true">
+          <div class="shirt">
+            <span class="ovr">${player.ovr}</span>
+          </div>
+        </div>
+        <div class="pos-label">${player.pos}</div>
+        <div class="country-label">
+          <span class="flag-emoji">${player.flag}</span>
+          <span>${player.country}</span>
+        </div>
+      `;
+      pitch.appendChild(marker);
+
+      window.setTimeout(() => {
+        marker.classList.add("reveal");
+      }, index * 115);
+    }
+
+    function sortLineup() {
+      if (filling) return;
+      filling = true;
+      spinButton.disabled = true;
+      clearPlayers();
+
+      const formation = formations[Math.floor(Math.random() * formations.length)];
+      const squad = buildSquad(formation);
+      formationResult.textContent = formation.name;
+
+      squad.forEach((player, index) => renderPlayer(player, index));
+
+      window.setTimeout(() => {
+        filling = false;
+        spinButton.disabled = false;
+      }, squad.length * 115 + 500);
+    }
+
+    spinButton.addEventListener("click", sortLineup);
+  </script>
+</body>
+</html>

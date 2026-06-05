@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roletas Ultimate Bronze</title>
+  <style>
+    :root {
+      --pitch: #102a1f;
+      --pitch-2: #19392c;
+      --line: rgba(236, 241, 226, 0.34);
+      --cream: #f3ead2;
+      --ink: #101513;
+      --gold: #d6a84f;
+      --orange: #f07938;
+      --blue: #58b6d7;
+      --red: #c94a3f;
+      --panel: rgba(245, 238, 216, 0.95);
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--cream);
+      font-family: "Trebuchet MS", Verdana, sans-serif;
+      background:
+        linear-gradient(90deg, transparent 49.65%, var(--line) 49.65%, var(--line) 50.35%, transparent 50.35%),
+        radial-gradient(circle at 50% 50%, transparent 0 13rem, var(--line) 13.05rem 13.18rem, transparent 13.25rem),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 7rem, rgba(0,0,0,0.045) 7rem 14rem),
+        linear-gradient(135deg, var(--pitch), var(--pitch-2));
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 5.5rem auto auto 50%;
+      width: min(62vw, 720px);
+      height: min(62vw, 720px);
+      border: 2px solid var(--line);
+      border-radius: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    body::after {
+      inset: auto auto -14rem 50%;
+      width: min(76vw, 900px);
+      height: min(76vw, 900px);
+      opacity: 0.55;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      width: min(1500px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 32px 0 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 12px 0 26px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 760px;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(2.5rem, 7vw, 6rem);
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      text-wrap: balance;
+      text-shadow: 0 5px 0 rgba(0, 0, 0, 0.26);
+    }
+
+    .score-strip {
+      display: grid;
+      gap: 6px;
+      min-width: 210px;
+      padding: 12px 14px;
+      border: 1px solid rgba(243, 234, 210, 0.35);
+      background: rgba(16, 21, 19, 0.52);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+    }
+
+    .score-strip span {
+      color: rgba(243, 234, 210, 0.68);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .score-strip strong {
+      font-size: 1.05rem;
+    }
+
+    .arena {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .wheel-panel {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+      min-height: 650px;
+      padding: 20px;
+      color: var(--ink);
+      background: var(--panel);
+      border: 3px solid #171a16;
+      box-shadow: var(--shadow), inset 0 0 0 5px rgba(16, 21, 19, 0.08);
+      overflow: hidden;
+    }
+
+    .wheel-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(16, 21, 19, 0.08) 25%, transparent 25%) 0 0 / 22px 22px,
+        linear-gradient(135deg, transparent 75%, rgba(16, 21, 19, 0.08) 75%) 0 0 / 22px 22px;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+    }
+
+    .panel-head,
+    .result-box,
+    .wheel-wrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 2px solid rgba(16, 21, 19, 0.16);
+      padding-bottom: 14px;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(2rem, 4vw, 3.3rem);
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .tag {
+      flex: 0 0 auto;
+      padding: 7px 9px;
+      border: 2px solid var(--ink);
+      background: var(--gold);
+      font-weight: 900;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transform: rotate(2deg);
+    }
+
+    .wheel-wrap {
+      align-self: center;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 390px;
+    }
+
+    .wheel-stage {
+      position: relative;
+      width: min(100%, 420px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      filter: drop-shadow(0 18px 22px rgba(16, 21, 19, 0.24));
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -3px;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 52px solid #111713;
+      transform: translateX(-50%);
+      z-index: 3;
+      filter: drop-shadow(0 5px 0 rgba(0, 0, 0, 0.22));
+    }
+
+    .hub {
+      position: absolute;
+      width: 24%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #111713;
+      color: var(--cream);
+      border: 7px solid var(--gold);
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(1.1rem, 3vw, 2rem);
+      letter-spacing: 0;
+      z-index: 2;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.15);
+    }
+
+    .result-box {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .readout {
+      min-height: 86px;
+      padding: 12px 14px;
+      border: 2px solid rgba(16, 21, 19, 0.2);
+      background: #fff7df;
+    }
+
+    .readout span {
+      display: block;
+      margin-bottom: 4px;
+      color: rgba(16, 21, 19, 0.58);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .readout strong {
+      display: block;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(2.1rem, 6vw, 4rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    button {
+      border: 0;
+      min-width: 132px;
+      padding: 0 18px;
+      color: var(--cream);
+      background: #111713;
+      font: 900 1rem "Trebuchet MS", Verdana, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: inset 0 -5px 0 rgba(255, 255, 255, 0.12), 0 8px 0 rgba(0, 0, 0, 0.18);
+      transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: inset 0 -5px 0 rgba(255, 255, 255, 0.12), 0 10px 0 rgba(0, 0, 0, 0.18);
+      background: #1e2a23;
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(5px);
+      box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12), 0 3px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.62;
+    }
+
+    .combo {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      margin-top: 22px;
+      padding: 16px 18px;
+      color: var(--ink);
+      background: var(--cream);
+      border: 3px solid #171a16;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+    }
+
+    .combo span {
+      display: block;
+      color: rgba(16, 21, 19, 0.62);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .combo strong {
+      display: block;
+      margin-top: 4px;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(1.6rem, 4vw, 3.2rem);
+      line-height: 1;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .combo button {
+      min-height: 64px;
+      background: var(--red);
+    }
+
+    .punishment-zone {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.85fr) minmax(320px, 1.15fr);
+      gap: 22px;
+      margin-top: 22px;
+      align-items: stretch;
+    }
+
+    .punishment-zone .wheel-panel {
+      min-height: 620px;
+      background: rgba(35, 18, 16, 0.96);
+      color: var(--cream);
+      border-color: #f3ead2;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.46), inset 0 0 0 5px rgba(243, 234, 210, 0.08);
+    }
+
+    .punishment-zone .wheel-panel::before {
+      background:
+        linear-gradient(135deg, rgba(243, 234, 210, 0.08) 25%, transparent 25%) 0 0 / 22px 22px,
+        linear-gradient(135deg, transparent 75%, rgba(243, 234, 210, 0.08) 75%) 0 0 / 22px 22px;
+    }
+
+    .punishment-zone .panel-head {
+      border-bottom-color: rgba(243, 234, 210, 0.18);
+    }
+
+    .punishment-zone .tag {
+      background: var(--red);
+      color: var(--cream);
+      border-color: var(--cream);
+    }
+
+    .punishment-zone .readout {
+      background: #fff7df;
+      color: var(--ink);
+    }
+
+    .punishment-zone button {
+      background: var(--red);
+    }
+
+    .rule-board {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+      color: var(--ink);
+      background: var(--cream);
+      border: 3px solid #171a16;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+    }
+
+    .rule-board h2 {
+      margin: 0;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .rule-board p {
+      margin: 0;
+      font-size: 1.02rem;
+      line-height: 1.45;
+    }
+
+    .negative-rule {
+      min-height: 128px;
+      padding: 14px;
+      border: 2px solid rgba(16, 21, 19, 0.2);
+      background: #fff7df;
+    }
+
+    .negative-rule span,
+    .penalty-list span {
+      display: block;
+      margin-bottom: 5px;
+      color: rgba(16, 21, 19, 0.62);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .negative-rule strong {
+      display: block;
+      font-size: clamp(1.15rem, 2vw, 1.6rem);
+      line-height: 1.28;
+    }
+
+    .penalty-list {
+      display: grid;
+      gap: 8px;
+      padding-top: 2px;
+    }
+
+    .penalty-list ul {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.42;
+    }
+
+    @media (max-width: 900px) {
+      .topbar,
+      .arena,
+      .combo,
+      .punishment-zone {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        display: grid;
+      }
+
+      .score-strip {
+        min-width: 0;
+      }
+
+      .wheel-panel {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(100% - 18px, 1500px);
+        padding-top: 16px;
+      }
+
+      .wheel-panel {
+        padding: 14px;
+      }
+
+      .panel-head {
+        display: grid;
+      }
+
+      .wheel-wrap {
+        min-height: 300px;
+      }
+
+      .result-box {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        min-height: 58px;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="topbar" aria-label="Introducao">
+      <h1>Roletas Ultimate Bronze</h1>
+      <div class="score-strip">
+        <span>Regra da rodada</span>
+        <strong>Gire uma posição e um overall para liberar o upgrade.</strong>
+      </div>
+    </section>
+
+    <section class="arena" aria-label="Roletas">
+      <article class="wheel-panel">
+        <div class="panel-head">
+          <h2>Posição</h2>
+          <div class="tag">campo todo</div>
+        </div>
+        <div class="wheel-wrap">
+          <div class="wheel-stage">
+            <div class="pointer" aria-hidden="true"></div>
+            <canvas id="positionWheel" width="720" height="720" aria-label="Roleta de posicoes"></canvas>
+            <div class="hub">POS</div>
+          </div>
+        </div>
+        <div class="result-box">
+          <div class="readout">
+            <span>Resultado</span>
+            <strong id="positionResult">---</strong>
+          </div>
+          <button id="spinPosition" type="button">Girar</button>
+        </div>
+      </article>
+
+      <article class="wheel-panel">
+        <div class="panel-head">
+          <h2>Overall</h2>
+          <div class="tag">75 a 95</div>
+        </div>
+        <div class="wheel-wrap">
+          <div class="wheel-stage">
+            <div class="pointer" aria-hidden="true"></div>
+            <canvas id="overallWheel" width="720" height="720" aria-label="Roleta de overall"></canvas>
+            <div class="hub">OVR</div>
+          </div>
+        </div>
+        <div class="result-box">
+          <div class="readout">
+            <span>Resultado</span>
+            <strong id="overallResult">---</strong>
+          </div>
+          <button id="spinOverall" type="button">Girar</button>
+        </div>
+      </article>
+
+      <article class="wheel-panel">
+        <div class="panel-head">
+          <h2>País</h2>
+          <div class="tag">hardcore</div>
+        </div>
+        <div class="wheel-wrap">
+          <div class="wheel-stage">
+            <div class="pointer" aria-hidden="true"></div>
+            <canvas id="countryWheel" width="720" height="720" aria-label="Roleta de paises"></canvas>
+            <div class="hub">NAT</div>
+          </div>
+        </div>
+        <div class="result-box">
+          <div class="readout">
+            <span>Resultado</span>
+            <strong id="countryResult">---</strong>
+          </div>
+          <button id="spinCountry" type="button">Girar</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="combo" aria-label="Resultado combinado">
+      <div>
+        <span>Upgrade sorteado</span>
+        <strong id="comboResult">Gire as três roletas</strong>
+      </div>
+      <button id="spinBoth" type="button">Girar as três</button>
+    </section>
+
+    <section class="punishment-zone" aria-label="Roleta negativa">
+      <article class="wheel-panel">
+        <div class="panel-head">
+          <h2>Negativa</h2>
+          <div class="tag">3+ gols</div>
+        </div>
+        <div class="wheel-wrap">
+          <div class="wheel-stage">
+            <div class="pointer" aria-hidden="true"></div>
+            <canvas id="negativeWheel" width="720" height="720" aria-label="Roleta negativa"></canvas>
+            <div class="hub">VAR</div>
+          </div>
+        </div>
+        <div class="result-box">
+          <div class="readout">
+            <span>Punição</span>
+            <strong id="negativeResult">---</strong>
+          </div>
+          <button id="spinNegative" type="button">Girar</button>
+        </div>
+      </article>
+
+      <aside class="rule-board">
+        <div>
+          <h2>Regra da negativa</h2>
+          <p>O perdedor gira esta roleta quando perder por 3 gols ou mais. A punição vale para o próximo jogo entre vocês.</p>
+        </div>
+        <div class="negative-rule">
+          <span>Regra sorteada</span>
+          <strong id="negativeRule">Gire a roleta negativa para revelar a consequência.</strong>
+        </div>
+        <div class="penalty-list">
+          <span>Ideias incluídas</span>
+          <ul>
+            <li>perder jogador escolhido pelo adversário;</li>
+            <li>perder jogador de uma posição sorteada;</li>
+            <li>jogar sem atacante, com pior goleiro ou com bronzes no banco;</li>
+            <li>travas de substituição, formação ou química para o próximo jogo.</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const positions = [
+      "GOL", "LD", "ZAG", "LE", "ADD", "ADE",
+      "VOL", "MC", "MEI", "MD", "ME", "PD", "PE", "SA", "ATA"
+    ];
+
+    const overalls = Array.from({ length: 21 }, (_, index) => String(index + 75));
+
+    const countries = [
+      { wheel: "🇧🇷", result: "🇧🇷 Brasil" },
+      { wheel: "🇦🇷", result: "🇦🇷 Argentina" },
+      { wheel: "🇺🇾", result: "🇺🇾 Uruguai" },
+      { wheel: "🇨🇴", result: "🇨🇴 Colômbia" },
+      { wheel: "🇨🇱", result: "🇨🇱 Chile" },
+      { wheel: "🇵🇾", result: "🇵🇾 Paraguai" },
+      { wheel: "🇵🇪", result: "🇵🇪 Peru" },
+      { wheel: "🇪🇨", result: "🇪🇨 Equador" },
+      { wheel: "🇧🇴", result: "🇧🇴 Bolívia" },
+      { wheel: "🇻🇪", result: "🇻🇪 Venezuela" },
+      { wheel: "🇲🇽", result: "🇲🇽 México" },
+      { wheel: "🇺🇸", result: "🇺🇸 Estados Unidos" },
+      { wheel: "🇨🇦", result: "🇨🇦 Canadá" },
+      { wheel: "🇨🇷", result: "🇨🇷 Costa Rica" },
+      { wheel: "🇯🇲", result: "🇯🇲 Jamaica" },
+      { wheel: "🇵🇦", result: "🇵🇦 Panamá" },
+      { wheel: "🇭🇳", result: "🇭🇳 Honduras" },
+      { wheel: "🇸🇻", result: "🇸🇻 El Salvador" },
+      { wheel: "🇬🇹", result: "🇬🇹 Guatemala" },
+      { wheel: "🇩🇴", result: "🇩🇴 República Dominicana" },
+      { wheel: "🇫🇷", result: "🇫🇷 França" },
+      { wheel: "🇪🇸", result: "🇪🇸 Espanha" },
+      { wheel: "🏴", result: "🏴 Inglaterra" },
+      { wheel: "🇵🇹", result: "🇵🇹 Portugal" },
+      { wheel: "🇮🇹", result: "🇮🇹 Itália" },
+      { wheel: "🇩🇪", result: "🇩🇪 Alemanha" },
+      { wheel: "🇳🇱", result: "🇳🇱 Holanda" },
+      { wheel: "🇧🇪", result: "🇧🇪 Bélgica" },
+      { wheel: "🇭🇷", result: "🇭🇷 Croácia" },
+      { wheel: "🇩🇰", result: "🇩🇰 Dinamarca" },
+      { wheel: "🇸🇪", result: "🇸🇪 Suécia" },
+      { wheel: "🇳🇴", result: "🇳🇴 Noruega" },
+      { wheel: "🇫🇮", result: "🇫🇮 Finlândia" },
+      { wheel: "🇨🇭", result: "🇨🇭 Suíça" },
+      { wheel: "🇦🇹", result: "🇦🇹 Áustria" },
+      { wheel: "🇵🇱", result: "🇵🇱 Polônia" },
+      { wheel: "🇨🇿", result: "🇨🇿 Chéquia" },
+      { wheel: "🇸🇰", result: "🇸🇰 Eslováquia" },
+      { wheel: "🇷🇸", result: "🇷🇸 Sérvia" },
+      { wheel: "🇸🇮", result: "🇸🇮 Eslovênia" },
+      { wheel: "🇧🇦", result: "🇧🇦 Bósnia" },
+      { wheel: "🇲🇪", result: "🇲🇪 Montenegro" },
+      { wheel: "🇦🇱", result: "🇦🇱 Albânia" },
+      { wheel: "🇽🇰", result: "🇽🇰 Kosovo" },
+      { wheel: "🇬🇷", result: "🇬🇷 Grécia" },
+      { wheel: "🇹🇷", result: "🇹🇷 Turquia" },
+      { wheel: "🇷🇴", result: "🇷🇴 Romênia" },
+      { wheel: "🇧🇬", result: "🇧🇬 Bulgária" },
+      { wheel: "🇭🇺", result: "🇭🇺 Hungria" },
+      { wheel: "🇺🇦", result: "🇺🇦 Ucrânia" },
+      { wheel: "🇷🇺", result: "🇷🇺 Rússia" },
+      { wheel: "🇮🇪", result: "🇮🇪 Irlanda" },
+      { wheel: "🏴", result: "🏴 Escócia" },
+      { wheel: "🏴", result: "🏴 País de Gales" },
+      { wheel: "🇮🇸", result: "🇮🇸 Islândia" },
+      { wheel: "🇲🇦", result: "🇲🇦 Marrocos" },
+      { wheel: "🇪🇬", result: "🇪🇬 Egito" },
+      { wheel: "🇩🇿", result: "🇩🇿 Argélia" },
+      { wheel: "🇹🇳", result: "🇹🇳 Tunísia" },
+      { wheel: "🇸🇳", result: "🇸🇳 Senegal" },
+      { wheel: "🇳🇬", result: "🇳🇬 Nigéria" },
+      { wheel: "🇨🇲", result: "🇨🇲 Camarões" },
+      { wheel: "🇬🇭", result: "🇬🇭 Gana" },
+      { wheel: "🇨🇮", result: "🇨🇮 Costa do Marfim" },
+      { wheel: "🇿🇦", result: "🇿🇦 África do Sul" },
+      { wheel: "🇲🇱", result: "🇲🇱 Mali" },
+      { wheel: "🇨🇩", result: "🇨🇩 RD Congo" },
+      { wheel: "🇯🇵", result: "🇯🇵 Japão" },
+      { wheel: "🇰🇷", result: "🇰🇷 Coreia do Sul" },
+      { wheel: "🇸🇦", result: "🇸🇦 Arábia Saudita" },
+      { wheel: "🇮🇷", result: "🇮🇷 Irã" },
+      { wheel: "🇶🇦", result: "🇶🇦 Catar" },
+      { wheel: "🇦🇪", result: "🇦🇪 Emirados Árabes" },
+      { wheel: "🇦🇺", result: "🇦🇺 Austrália" },
+      { wheel: "🇳🇿", result: "🇳🇿 Nova Zelândia" },
+      { wheel: "🇨🇳", result: "🇨🇳 China" },
+      { wheel: "🇮🇳", result: "🇮🇳 Índia" }
+    ];
+
+    const penalties = [
+      {
+        wheel: "PERDE 1",
+        result: "Perde 1 jogador",
+        rule: "O adversário escolhe um jogador do seu time atual. Esse jogador não pode ser usado no próximo jogo."
+      },
+      {
+        wheel: "POSIÇÃO",
+        result: "Perde por posição",
+        rule: "Gire a roleta de posição. Você deve tirar do próximo jogo um jogador daquela posição. Se não tiver, o adversário escolhe uma posição parecida."
+      },
+      {
+        wheel: "SEM ATA",
+        result: "Sem atacante",
+        rule: "No próximo jogo, você não pode escalar nenhum ATA ou SA de origem. Precisa improvisar alguém de outra posição no ataque."
+      },
+      {
+        wheel: "PIOR GOL",
+        result: "Pior goleiro",
+        rule: "No próximo jogo, você é obrigado a usar o pior goleiro disponível no seu clube/elenco dentro das regras da brincadeira."
+      },
+      {
+        wheel: "BRONZE",
+        result: "Volta um upgrade",
+        rule: "Um jogador melhorado do seu time volta para bronze no próximo jogo. O adversário escolhe qual upgrade cai."
+      },
+      {
+        wheel: "BANCO 0",
+        result: "Sem banco",
+        rule: "No próximo jogo, você não pode fazer substituições. Se o jogo obrigar banco, deixe só bronzes que você não pretende usar."
+      },
+      {
+        wheel: "1 SUB",
+        result: "Uma substituição",
+        rule: "No próximo jogo, você pode fazer no máximo uma substituição, contando alteração por lesão ou ajuste tático."
+      },
+      {
+        wheel: "QUÍMICA",
+        result: "Quebra química",
+        rule: "O adversário escolhe um titular para jogar fora de posição no próximo jogo, desde que o jogo permita escalar."
+      },
+      {
+        wheel: "SEM PACE",
+        result: "Sem velocidade",
+        rule: "O adversário escolhe um jogador rápido do seu time. Ele fica fora do próximo jogo."
+      },
+      {
+        wheel: "CARTA FIXA",
+        result: "Carta intocável",
+        rule: "O adversário escolhe um titular ruim ou bronze que você é obrigado a manter os 90 minutos, salvo expulsão."
+      },
+      {
+        wheel: "FORMAÇÃO",
+        result: "Formação travada",
+        rule: "O adversário escolhe sua formação do próximo jogo entre três opções permitidas pelo FIFA."
+      },
+      {
+        wheel: "CAPITÃO",
+        result: "Capitão castigado",
+        rule: "Seu melhor jogador por overall fica fora do próximo jogo. Em caso de empate no overall, o adversário escolhe."
+      }
+    ];
+
+    const palettes = {
+      position: ["#d6a84f", "#f07938", "#58b6d7", "#f3ead2", "#c94a3f", "#79b86d"],
+      overall: ["#111713", "#d6a84f", "#58b6d7", "#f07938", "#f3ead2", "#c94a3f"],
+      country: ["#111713", "#d6a84f", "#58b6d7", "#f07938", "#f3ead2", "#79b86d", "#c94a3f"],
+      negative: ["#111713", "#c94a3f", "#f07938", "#f3ead2", "#d6a84f", "#6f2420"]
+    };
+
+    function easeOutQuint(t) {
+      return 1 - Math.pow(1 - t, 5);
+    }
+
+    class Roulette {
+      constructor(options) {
+        this.canvas = options.canvas;
+        this.ctx = this.canvas.getContext("2d");
+        this.items = options.items;
+        this.colors = options.colors;
+        this.result = options.result;
+        this.rule = options.rule;
+        this.button = options.button;
+        this.rotation = 0;
+        this.isSpinning = false;
+        this.selected = null;
+        this.onDone = options.onDone;
+
+        this.button.addEventListener("click", () => this.spin());
+        this.draw();
+      }
+
+      draw() {
+        const ctx = this.ctx;
+        const size = this.canvas.width;
+        const center = size / 2;
+        const radius = center - 18;
+        const slice = (Math.PI * 2) / this.items.length;
+
+        ctx.clearRect(0, 0, size, size);
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.rotate(this.rotation);
+
+        this.items.forEach((item, index) => {
+          const start = -Math.PI / 2 + index * slice;
+          const end = start + slice;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.arc(0, 0, radius, start, end);
+          ctx.closePath();
+          ctx.fillStyle = this.colors[index % this.colors.length];
+          ctx.fill();
+          ctx.strokeStyle = "rgba(16, 21, 19, 0.72)";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          ctx.save();
+          ctx.rotate(start + slice / 2);
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = this.needsLightText(index) ? "#f3ead2" : "#101513";
+          const label = this.getWheelLabel(item);
+          const fontSize = this.items.length > 45 ? 28 : this.items.length > 18 ? 27 : 34;
+          ctx.font = `900 ${fontSize}px Trebuchet MS`;
+          ctx.fillText(label, radius - 26, 0);
+          ctx.restore();
+        });
+
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.lineWidth = 15;
+        ctx.strokeStyle = "#111713";
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      needsLightText(index) {
+        const color = this.colors[index % this.colors.length].toLowerCase();
+        return color === "#111713" || color === "#c94a3f" || color === "#f07938";
+      }
+
+      getWheelLabel(item) {
+        return typeof item === "object" ? item.wheel : item;
+      }
+
+      getResultLabel(item) {
+        return typeof item === "object" ? item.result : item;
+      }
+
+      getRuleLabel(item) {
+        return typeof item === "object" ? item.rule : "";
+      }
+
+      spin() {
+        if (this.isSpinning) return Promise.resolve(this.selected);
+
+        const slice = (Math.PI * 2) / this.items.length;
+        const selectedIndex = Math.floor(Math.random() * this.items.length);
+        const extraSpins = 6 + Math.floor(Math.random() * 4);
+        const current = this.rotation;
+        const currentNormalized = ((current % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        const targetNormalized = Math.PI * 2 - (selectedIndex + 0.5) * slice;
+        const delta = ((targetNormalized - currentNormalized) + Math.PI * 2) % (Math.PI * 2);
+        const target = current + extraSpins * Math.PI * 2 + delta;
+        const duration = 3300 + Math.random() * 750;
+        const startTime = performance.now();
+
+        this.isSpinning = true;
+        this.button.disabled = true;
+        this.result.textContent = "...";
+        if (this.rule) this.rule.textContent = "Sorteando a punição...";
+
+        return new Promise((resolve) => {
+          const animate = (now) => {
+            const progress = Math.min((now - startTime) / duration, 1);
+            this.rotation = current + (target - current) * easeOutQuint(progress);
+            this.draw();
+
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+              return;
+            }
+
+            this.rotation = target;
+            const selectedItem = this.items[selectedIndex];
+            this.selected = this.getResultLabel(selectedItem);
+            this.result.textContent = this.selected;
+            if (this.rule) this.rule.textContent = this.getRuleLabel(selectedItem);
+            this.isSpinning = false;
+            this.button.disabled = false;
+            this.onDone?.(this.selected);
+            resolve(this.selected);
+          };
+
+          requestAnimationFrame(animate);
+        });
+      }
+    }
+
+    const comboResult = document.getElementById("comboResult");
+    let currentPosition = null;
+    let currentOverall = null;
+    let currentCountry = null;
+
+    function updateCombo() {
+      const missing = [];
+      if (!currentPosition) missing.push("posição");
+      if (!currentOverall) missing.push("overall");
+      if (!currentCountry) missing.push("país");
+
+      if (!missing.length) {
+        comboResult.textContent = `${currentCountry} | ${currentPosition} | overall ${currentOverall}`;
+      } else if (missing.length < 3) {
+        comboResult.textContent = `Falta: ${missing.join(", ")}`;
+      } else {
+        comboResult.textContent = "Gire as três roletas";
+      }
+    }
+
+    const positionWheel = new Roulette({
+      canvas: document.getElementById("positionWheel"),
+      items: positions,
+      colors: palettes.position,
+      result: document.getElementById("positionResult"),
+      button: document.getElementById("spinPosition"),
+      onDone(value) {
+        currentPosition = value;
+        updateCombo();
+      }
+    });
+
+    const overallWheel = new Roulette({
+      canvas: document.getElementById("overallWheel"),
+      items: overalls,
+      colors: palettes.overall,
+      result: document.getElementById("overallResult"),
+      button: document.getElementById("spinOverall"),
+      onDone(value) {
+        currentOverall = value;
+        updateCombo();
+      }
+    });
+
+    const countryWheel = new Roulette({
+      canvas: document.getElementById("countryWheel"),
+      items: countries,
+      colors: palettes.country,
+      result: document.getElementById("countryResult"),
+      button: document.getElementById("spinCountry"),
+      onDone(value) {
+        currentCountry = value;
+        updateCombo();
+      }
+    });
+
+    const negativeWheel = new Roulette({
+      canvas: document.getElementById("negativeWheel"),
+      items: penalties,
+      colors: palettes.negative,
+      result: document.getElementById("negativeResult"),
+      rule: document.getElementById("negativeRule"),
+      button: document.getElementById("spinNegative")
+    });
+
+    document.getElementById("spinBoth").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      await Promise.all([positionWheel.spin(), overallWheel.spin(), countryWheel.spin()]);
+      button.disabled = false;
+    });
+  </script>
+</body>
+</html>
